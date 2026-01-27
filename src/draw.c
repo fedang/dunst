@@ -350,13 +350,6 @@ static struct dimensions calculate_dimensions(GSList *layouts)
         dim.w += 2 * settings.frame_width;
         dim.corner_radius = MIN(dim.corner_radius, dim.h/2);
 
-        /* clamp max width to screen width */
-        const struct screen_info *scr = output->get_active_screen();
-        int max_width = scr->w - settings.offset.x;
-        if (dim.w > max_width) {
-                dim.w = max_width;
-        }
-
         if (settings.gap_size) {
                 int extra_frame_height = layout_count * (2 * settings.frame_width);
                 int extra_gap_height = (layout_count * settings.gap_size) - settings.gap_size;
@@ -366,6 +359,20 @@ static struct dimensions calculate_dimensions(GSList *layouts)
                 dim.h += 2 * settings.frame_width;
                 dim.h += (layout_count - 1) * settings.separator_height;
         }
+
+        const struct screen_info *scr = output->get_active_screen();
+        int max_width = scr->w - settings.offset.x;
+        int max_height = scr->h - settings.offset.y;
+
+        /* clamp max width to screen width */
+        if (dim.w > max_width)
+                dim.w = max_width;
+
+        /* clamp max height to screen height */
+        if (dim.h > max_height) {
+				LOG_W("Clamped height %d to screen limit %d", dim.h, max_height);
+                dim.h = max_height;
+		}
 
         return dim;
 }

@@ -720,8 +720,9 @@ void wl_display_surface(cairo_surface_t *srf, window winptr, const struct dimens
         ctx.current_buffer = get_next_buffer(ctx.shm, ctx.buffers,
                         dim->w * scale, dim->h * scale);
 
-        if(ctx.current_buffer == NULL) {
-                return;
+        if (ctx.current_buffer == NULL) {
+			LOG_W("Failed to get buffer, requested %ix%i", dim->w * scale, dim->h * scale);
+			return;
         }
 
         cairo_t *c = ctx.current_buffer->cairo;
@@ -751,6 +752,7 @@ cairo_t* wl_win_get_context(window winptr) {
 }
 
 const struct screen_info* wl_get_active_screen(void) {
+        // Default value if nothing else could be found
         static struct screen_info scr = {
                 .w = 3840,
                 .h = 2160,
@@ -765,13 +767,13 @@ const struct screen_info* wl_get_active_screen(void) {
         if (current_output != NULL) {
                 scr.w = current_output->width;
                 scr.h = current_output->height;
-                return &scr;
-        } else {
-                // Using auto output. We don't know on which output we are
-                // (although we might find it out by looking at the list of
-                // toplevels).
-                return &scr;
+        } else if (!wl_list_empty(&ctx.outputs)) {
+                current_output = wl_container_of(ctx.outputs.next, current_output, link);
+                scr.w = current_output->width;
+                scr.h = current_output->height;
         }
+
+        return &scr;
 }
 
 bool wl_is_idle(void) {
